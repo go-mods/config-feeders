@@ -1,0 +1,10 @@
+{
+  "host": "jsonhost.com",
+  "port": 5000,
+  "debug": true,
+  "database": {
+    "name": "json_db",
+    "user": "json_user",
+    "password": "json_password"
+  }
+}

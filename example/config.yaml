@@ -1,0 +1,7 @@
+host: yamlhost.com
+port: 6000
+debug: false
+database:
+  name: yaml_db
+  user: yaml_user
+  password: yaml_password

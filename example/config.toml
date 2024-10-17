@@ -1,0 +1,8 @@
+host = "tomlhost.com"
+port = 7000
+debug = true
+
+[database]
+name = "toml_db"
+user = "toml_user"
+password = "toml_password"
