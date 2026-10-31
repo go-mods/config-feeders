@@ -25,7 +25,7 @@ func (f Yaml) Feed(structure interface{}) error {
 	buf, err := os.ReadFile(filepath.Clean(f.Path))
 
 	if err != nil {
-		return fmt.Errorf("yaml: %v", err)
+		return fmt.Errorf("yaml: %w", err)
 	}
 
 	if YAMLUnmarshal == nil {
@@ -33,7 +33,7 @@ func (f Yaml) Feed(structure interface{}) error {
 	}
 
 	if err = YAMLUnmarshal(buf, structure); err != nil {
-		return fmt.Errorf("yaml: %v", err)
+		return fmt.Errorf("yaml: %w", err)
 	}
 
 	return nil

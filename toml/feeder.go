@@ -25,7 +25,7 @@ func (f Toml) Feed(structure interface{}) error {
 	buf, err := os.ReadFile(filepath.Clean(f.Path))
 
 	if err != nil {
-		return fmt.Errorf("toml: %v", err)
+		return fmt.Errorf("toml: %w", err)
 	}
 
 	if TOMLUnmarshal == nil {
@@ -33,7 +33,7 @@ func (f Toml) Feed(structure interface{}) error {
 	}
 
 	if err = TOMLUnmarshal(buf, structure); err != nil {
-		return fmt.Errorf("toml: %v", err)
+		return fmt.Errorf("toml: %w", err)
 	}
 
 	return nil

@@ -18,14 +18,13 @@ type DotEnv struct {
 // Feed feeds the structure with the dot env file data.
 func (f DotEnv) Feed(structure interface{}) error {
 	file, err := os.Open(filepath.Clean(f.Path))
+	if err != nil {
+		return fmt.Errorf("config: cannot open env file; err: %w", err)
+	}
 	defer func(file *os.File) { _ = file.Close() }(file)
 
-	if err != nil {
-		return fmt.Errorf("config: cannot open env file; err: %v", err)
-	}
-
 	if err = dotenv.NewDecoder(file).Decode(structure); err != nil {
-		return fmt.Errorf("dotenv: %v", err)
+		return fmt.Errorf("dotenv: %w", err)
 	}
 
 	return nil

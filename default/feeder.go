@@ -43,7 +43,7 @@ func (f Default) fillStruct(s reflect.Value) error {
 			if s.Type().Field(i).Type.String() == "time.Duration" {
 				d, err := time.ParseDuration(t)
 				if err != nil {
-					return fmt.Errorf("default: cannot set `%v` field; err: %v", s.Type().Field(i).Name, err)
+					return fmt.Errorf("default: cannot set `%v` field; err: %w", s.Type().Field(i).Name, err)
 				}
 				// #nosec G103
 				ptr := reflect.NewAt(s.Field(i).Type(), unsafe.Pointer(s.Field(i).UnsafeAddr())).Elem()
@@ -51,7 +51,7 @@ func (f Default) fillStruct(s reflect.Value) error {
 			} else {
 				v, err := cast.FromType(t, s.Type().Field(i).Type)
 				if err != nil {
-					return fmt.Errorf("default: cannot set `%v` field; err: %v", s.Type().Field(i).Name, err)
+					return fmt.Errorf("default: cannot set `%v` field; err: %w", s.Type().Field(i).Name, err)
 				}
 				// #nosec G103
 				ptr := reflect.NewAt(s.Field(i).Type(), unsafe.Pointer(s.Field(i).UnsafeAddr())).Elem()

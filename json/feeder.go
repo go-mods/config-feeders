@@ -24,7 +24,7 @@ func (f Json) Feed(structure interface{}) error {
 	buf, err := os.ReadFile(filepath.Clean(f.Path))
 
 	if err != nil {
-		return fmt.Errorf("json: %v", err)
+		return fmt.Errorf("json: %w", err)
 	}
 
 	if JSONUnmarshal == nil {
@@ -32,7 +32,7 @@ func (f Json) Feed(structure interface{}) error {
 	}
 
 	if err = JSONUnmarshal(buf, structure); err != nil {
-		return fmt.Errorf("json: %v", err)
+		return fmt.Errorf("json: %w", err)
 	}
 
 	return nil

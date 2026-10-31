@@ -14,7 +14,7 @@ type Env struct{}
 // Feed feeds the structure with the environment variables.
 func (f Env) Feed(structure interface{}) error {
 	if err := env.Feed(structure); err != nil {
-		return fmt.Errorf("env: %v", err)
+		return fmt.Errorf("env: %w", err)
 	}
 
 	return nil

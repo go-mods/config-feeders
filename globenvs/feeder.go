@@ -30,15 +30,15 @@ func (f GlobEnvs) Feed(structure interface{}) error {
 		file, err := os.Open(filepath.Clean(path))
 
 		if err != nil {
-			return fmt.Errorf("config: cannot open env file %s; err: %v", path, err)
+			return fmt.Errorf("config: cannot open env file %s; err: %w", path, err)
 		}
 
 		if err = dotenv.NewDecoder(file).Decode(structure); err != nil {
-			return fmt.Errorf("dotenv: %v", err)
+			return fmt.Errorf("dotenv: %w", err)
 		}
 
 		if err = file.Close(); err != nil {
-			return fmt.Errorf("config: cannot close env file %s; err: %v", path, err)
+			return fmt.Errorf("config: cannot close env file %s; err: %w", path, err)
 		}
 	}
 
@@ -52,7 +52,7 @@ func (f GlobEnvs) glob() ([]string, error) {
 	for _, pattern := range f.Patterns {
 		matches, err := filepath.Glob(pattern)
 		if err != nil {
-			return nil, fmt.Errorf("config: cannot glob env files; err: %v", err)
+			return nil, fmt.Errorf("config: cannot glob env files; err: %w", err)
 		}
 		paths = append(paths, matches...)
 	}
