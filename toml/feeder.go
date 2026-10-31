@@ -2,9 +2,10 @@ package toml_feeder
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
 	"os"
 	"path/filepath"
+
+	"github.com/BurntSushi/toml"
 )
 
 // Toml is a feeder to be used with golobby/config.

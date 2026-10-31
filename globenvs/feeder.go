@@ -2,9 +2,10 @@ package globenvs_feeder
 
 import (
 	"fmt"
-	"github.com/golobby/dotenv"
 	"os"
 	"path/filepath"
+
+	"github.com/golobby/dotenv"
 )
 
 // GlobEnvs is a feeder to be used with golobby/config.

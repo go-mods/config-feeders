@@ -2,15 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-mods/config-feeders/default"
-	"github.com/go-mods/config-feeders/dotenv"
-	"github.com/go-mods/config-feeders/env"
-	"github.com/go-mods/config-feeders/globenvs"
-	"github.com/go-mods/config-feeders/json"
-	"github.com/go-mods/config-feeders/toml"
-	"github.com/go-mods/config-feeders/yaml"
-	"github.com/golobby/config/v3"
 	"os"
+
+	"github.com/golobby/config/v3"
+
+	default_feeder "github.com/go-mods/config-feeders/default"
+	dotenv_feeder "github.com/go-mods/config-feeders/dotenv"
+	env_feeder "github.com/go-mods/config-feeders/env"
+	globenvs_feeder "github.com/go-mods/config-feeders/globenvs"
+	json_feeder "github.com/go-mods/config-feeders/json"
+	toml_feeder "github.com/go-mods/config-feeders/toml"
+	yaml_feeder "github.com/go-mods/config-feeders/yaml"
 )
 
 type Config struct {

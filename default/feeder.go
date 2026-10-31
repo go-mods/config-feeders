@@ -3,10 +3,11 @@ package default_feeder
 import (
 	"errors"
 	"fmt"
-	"github.com/golobby/cast"
 	"reflect"
 	"time"
 	"unsafe"
+
+	"github.com/golobby/cast"
 )
 
 // Default is a feeder to be used with golobby/config.
@@ -25,7 +26,7 @@ type Default struct{}
 func (f Default) Feed(structure interface{}) error {
 	inputType := reflect.TypeOf(structure)
 	if inputType != nil {
-		if inputType.Kind() == reflect.Ptr {
+		if inputType.Kind() == reflect.Pointer {
 			if inputType.Elem().Kind() == reflect.Struct {
 				return f.fillStruct(reflect.ValueOf(structure).Elem())
 			}
@@ -60,7 +61,7 @@ func (f Default) fillStruct(s reflect.Value) error {
 			if err := f.fillStruct(s.Field(i)); err != nil {
 				return err
 			}
-		} else if s.Type().Field(i).Type.Kind() == reflect.Ptr {
+		} else if s.Type().Field(i).Type.Kind() == reflect.Pointer {
 			if !s.Field(i).IsZero() && s.Field(i).Elem().Type().Kind() == reflect.Struct {
 				if err := f.fillStruct(s.Field(i).Elem()); err != nil {
 					return err

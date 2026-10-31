@@ -2,9 +2,10 @@ package yaml_feeder
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v3"
 )
 
 // Yaml is a feeder to be used with golobby/config.
