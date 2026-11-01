@@ -62,6 +62,79 @@ func TestFeed_SetsTaggedFields(t *testing.T) {
 	assert.Equal(t, "private", cfg.private)
 }
 
+type (
+	level   string
+	count   int
+	levels  []string
+	timeout time.Duration
+)
+
+func TestFeed_SetsNamedTypesAndSlices(t *testing.T) {
+	var cfg struct {
+		Level     level           `default:"debug"`
+		Count     count           `default:"3"`
+		Levels    levels          `default:"a, b"`
+		Items     []level         `default:"c,d"`
+		Durations []time.Duration `default:"1s,2m"`
+		Timeout   timeout         `default:"5"`
+		Int64     int64           `default:"5000000000"`
+	}
+
+	require.NoError(t, Default{}.Feed(&cfg))
+
+	assert.Equal(t, level("debug"), cfg.Level)
+	assert.Equal(t, count(3), cfg.Count)
+	assert.Equal(t, levels{"a", "b"}, cfg.Levels)
+	assert.Equal(t, []level{"c", "d"}, cfg.Items)
+	assert.Equal(t, []time.Duration{time.Second, 2 * time.Minute}, cfg.Durations)
+	assert.Equal(t, timeout(5), cfg.Timeout)
+	assert.Equal(t, int64(5000000000), cfg.Int64)
+}
+
+func TestFeed_UnsupportedTypes(t *testing.T) {
+	tests := []struct {
+		name      string
+		structure interface{}
+	}{
+		{"map", &struct {
+			Field map[string]string `default:"a=b"`
+		}{}},
+		{"pointer", &struct {
+			Field *string `default:"a"`
+		}{}},
+		{"struct", &struct {
+			Field nested `default:"a"`
+		}{}},
+		{"time", &struct {
+			Field time.Time `default:"2024-01-01T00:00:00Z"`
+		}{}},
+		{"slice of slices", &struct {
+			Field [][]string `default:"a,b"`
+		}{}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.ErrorContains(t, Default{}.Feed(tt.structure), "`Field`")
+		})
+	}
+}
+
+func TestFeed_CyclicStructure(t *testing.T) {
+	type node struct {
+		Value string `default:"node"`
+		Next  *node
+	}
+	first := &node{}
+	second := &node{Next: first}
+	first.Next = second
+
+	require.NoError(t, Default{}.Feed(first))
+
+	assert.Equal(t, "node", first.Value)
+	assert.Equal(t, "node", second.Value)
+}
+
 func TestFeed_OverwritesExistingValues(t *testing.T) {
 	cfg := nested{Value: "already set"}
 

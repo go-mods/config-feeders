@@ -6,15 +6,21 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 	"unsafe"
 
 	"github.com/golobby/cast"
 )
 
+var durationType = reflect.TypeOf(time.Duration(0))
+
 // Default is a feeder to be used with golobby/config.
 //
 // It feeds using a default value declared as tags in the structure.
+//
+// The supported field types are strings, booleans, integers and floats, named types
+// based on them, time.Duration, and slices of these (comma-separated values).
 //
 // Example:
 //
@@ -33,43 +39,71 @@ func (f Default) Feed(structure interface{}) error {
 	if v.Kind() != reflect.Pointer || v.IsNil() || v.Elem().Kind() != reflect.Struct {
 		return errors.New("default: invalid structure")
 	}
-	return f.fillStruct(v.Elem())
+	return f.fillStruct(v.Elem(), map[uintptr]bool{v.Pointer(): true})
 }
 
 // fillStruct sets the tagged fields of s to their default value, walking through
-// nested structs and non-nil pointers to structs.
-func (f Default) fillStruct(s reflect.Value) error {
+// nested structs and non-nil pointers to structs. The pointers already followed are
+// kept in seen, so that a cyclic structure does not recurse forever.
+func (f Default) fillStruct(s reflect.Value, seen map[uintptr]bool) error {
 	for i := 0; i < s.NumField(); i++ {
-		if t, exist := s.Type().Field(i).Tag.Lookup("default"); exist {
-			// handle time.Duration
-			if s.Type().Field(i).Type.String() == "time.Duration" {
-				d, err := time.ParseDuration(t)
-				if err != nil {
-					return fmt.Errorf("default: cannot set `%v` field; err: %w", s.Type().Field(i).Name, err)
-				}
-				// #nosec G103
-				ptr := reflect.NewAt(s.Field(i).Type(), unsafe.Pointer(s.Field(i).UnsafeAddr())).Elem()
-				ptr.Set(reflect.ValueOf(d))
-			} else {
-				v, err := cast.FromType(t, s.Type().Field(i).Type)
-				if err != nil {
-					return fmt.Errorf("default: cannot set `%v` field; err: %w", s.Type().Field(i).Name, err)
-				}
-				// #nosec G103
-				ptr := reflect.NewAt(s.Field(i).Type(), unsafe.Pointer(s.Field(i).UnsafeAddr())).Elem()
-				ptr.Set(reflect.ValueOf(v))
+		field, value := s.Type().Field(i), s.Field(i)
+
+		if t, exist := field.Tag.Lookup("default"); exist {
+			v, err := parse(t, field.Type)
+			if err != nil {
+				return fmt.Errorf("default: cannot set `%v` field; err: %w", field.Name, err)
 			}
-		} else if s.Type().Field(i).Type.Kind() == reflect.Struct {
-			if err := f.fillStruct(s.Field(i)); err != nil {
+			// #nosec G103
+			ptr := reflect.NewAt(value.Type(), unsafe.Pointer(value.UnsafeAddr())).Elem()
+			ptr.Set(v)
+		} else if field.Type.Kind() == reflect.Struct {
+			if err := f.fillStruct(value, seen); err != nil {
 				return err
 			}
-		} else if s.Type().Field(i).Type.Kind() == reflect.Pointer {
-			if !s.Field(i).IsZero() && s.Field(i).Elem().Type().Kind() == reflect.Struct {
-				if err := f.fillStruct(s.Field(i).Elem()); err != nil {
+		} else if field.Type.Kind() == reflect.Pointer {
+			if !value.IsNil() && value.Elem().Kind() == reflect.Struct && !seen[value.Pointer()] {
+				seen[value.Pointer()] = true
+				if err := f.fillStruct(value.Elem(), seen); err != nil {
 					return err
 				}
 			}
 		}
 	}
 	return nil
+}
+
+// parse converts a default value to the type t: a slice takes comma-separated values.
+func parse(value string, t reflect.Type) (reflect.Value, error) {
+	if t.Kind() != reflect.Slice {
+		return parseValue(value, t)
+	}
+
+	items := strings.Split(value, ",")
+	slice := reflect.MakeSlice(t, 0, len(items))
+	for _, item := range items {
+		v, err := parseValue(strings.Trim(item, " \n\r"), t.Elem())
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		slice = reflect.Append(slice, v)
+	}
+	return slice, nil
+}
+
+// parseValue converts a single default value to the type t, which may be a named type.
+func parseValue(value string, t reflect.Type) (reflect.Value, error) {
+	if t == durationType {
+		d, err := time.ParseDuration(value)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return reflect.ValueOf(d), nil
+	}
+
+	v, err := cast.FromString(value, t.Kind().String())
+	if err != nil {
+		return reflect.Value{}, err
+	}
+	return reflect.ValueOf(v).Convert(t), nil
 }
