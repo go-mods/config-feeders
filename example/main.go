@@ -1,7 +1,12 @@
+// Command example shows each feeder, then several feeders combined.
+//
+// The paths are relative to the root of the module: run it from there with
+// go run ./example
 package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/golobby/config/v3"
@@ -27,83 +32,50 @@ type Config struct {
 }
 
 func main() {
-	// Create a new config instance
-	cfg := Config{}
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
 
-	// Example for Default Feeder
-	fmt.Println("Default Feeder Example:")
+func run() error {
+	if err := os.Setenv("HOST", "example.com"); err != nil {
+		return err
+	}
+	if err := os.Setenv("PORT", "9090"); err != nil {
+		return err
+	}
+
 	defaultFeeder := default_feeder.Default{}
-	c := config.New()
-	_ = c.AddFeeder(defaultFeeder)
-	_ = c.AddStruct(&cfg)
-	_ = c.Feed()
-	printConfig(cfg)
-
-	// Example for DotEnv Feeder
-	fmt.Println("\nDotEnv Feeder Example:")
-	dotenvFeeder := dotenv_feeder.DotEnv{Path: "./example/.env"}
-	c = config.New()
-	_ = c.AddFeeder(dotenvFeeder)
-	_ = c.AddStruct(&cfg)
-	_ = c.Feed()
-	printConfig(cfg)
-
-	// Example for GlobEnvs Feeder
-	fmt.Println("\nGlobEnvs Feeder Example:")
-	globenvsFeeder := globenvs_feeder.GlobEnvs{Patterns: []string{"./example/.env.*"}}
-	c = config.New()
-	_ = c.AddFeeder(globenvsFeeder)
-	_ = c.AddStruct(&cfg)
-	_ = c.Feed()
-	printConfig(cfg)
-
-	// Example for Env Feeder
-	fmt.Println("\nEnv Feeder Example:")
-	os.Setenv("HOST", "example.com") // #nosec G104
-	os.Setenv("PORT", "9090")        // #nosec G104
 	envFeeder := env_feeder.Env{}
-	c = config.New()
-	_ = c.AddFeeder(envFeeder)
-	_ = c.AddStruct(&cfg)
-	_ = c.Feed()
-	printConfig(cfg)
-
-	// Example for JSON Feeder
-	fmt.Println("\nJSON Feeder Example:")
 	jsonFeeder := json_feeder.Json{Path: "./example/config.json"}
-	c = config.New()
-	_ = c.AddFeeder(jsonFeeder)
-	_ = c.AddStruct(&cfg)
-	_ = c.Feed()
-	printConfig(cfg)
 
-	// Example for YAML Feeder
-	fmt.Println("\nYAML Feeder Example:")
-	yamlFeeder := yaml_feeder.Yaml{Path: "./example/config.yaml"}
-	c = config.New()
-	_ = c.AddFeeder(yamlFeeder)
-	_ = c.AddStruct(&cfg)
-	_ = c.Feed()
-	printConfig(cfg)
+	examples := []struct {
+		title   string
+		feeders []config.Feeder
+	}{
+		{"Default", []config.Feeder{defaultFeeder}},
+		{"DotEnv", []config.Feeder{dotenv_feeder.DotEnv{Path: "./example/.env"}}},
+		{"GlobEnvs", []config.Feeder{globenvs_feeder.GlobEnvs{Patterns: []string{"./example/.env.*"}}}},
+		{"Env", []config.Feeder{envFeeder}},
+		{"JSON", []config.Feeder{jsonFeeder}},
+		{"YAML", []config.Feeder{yaml_feeder.Yaml{Path: "./example/config.yaml"}}},
+		{"TOML", []config.Feeder{toml_feeder.Toml{Path: "./example/config.toml"}}},
+		// Each feeder overrides the previous ones
+		{"Multiple", []config.Feeder{defaultFeeder, jsonFeeder, envFeeder}},
+	}
 
-	// Example for TOML Feeder
-	fmt.Println("\nTOML Feeder Example:")
-	tomlFeeder := toml_feeder.Toml{Path: "./example/config.toml"}
-	c = config.New()
-	_ = c.AddFeeder(tomlFeeder)
-	_ = c.AddStruct(&cfg)
-	_ = c.Feed()
-	printConfig(cfg)
+	for _, e := range examples {
+		fmt.Printf("%s Feeder Example:\n", e.title)
 
-	// Example of using multiple feeders
-	fmt.Println("\nMultiple Feeders Example:")
-	c = config.New()
-	_ = c.AddFeeder(defaultFeeder)
-	_ = c.AddFeeder(jsonFeeder)
-	_ = c.AddFeeder(envFeeder)
-	_ = c.AddStruct(&cfg)
-	_ = c.Feed()
-	printConfig(cfg)
+		var cfg Config
+		if err := config.New().AddFeeder(e.feeders...).AddStruct(&cfg).Feed(); err != nil {
+			return fmt.Errorf("%s feeder: %w", e.title, err)
+		}
+		printConfig(cfg)
+		fmt.Println()
+	}
+
+	return nil
 }
 
 func printConfig(cfg Config) {

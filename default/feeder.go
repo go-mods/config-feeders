@@ -1,3 +1,5 @@
+// Package default_feeder provides a golobby/config feeder that fills a structure
+// with the values declared in its `default` tags.
 package default_feeder
 
 import (
@@ -23,19 +25,19 @@ import (
 type Default struct{}
 
 // Feed feeds the structure with the default values declared as tags in the structure.
+//
+// The structure must be a non-nil pointer to a struct. A tagged field is always
+// overwritten, even if it already holds a value: add this feeder before the others.
 func (f Default) Feed(structure interface{}) error {
-	inputType := reflect.TypeOf(structure)
-	if inputType != nil {
-		if inputType.Kind() == reflect.Pointer {
-			if inputType.Elem().Kind() == reflect.Struct {
-				return f.fillStruct(reflect.ValueOf(structure).Elem())
-			}
-		}
+	v := reflect.ValueOf(structure)
+	if v.Kind() != reflect.Pointer || v.IsNil() || v.Elem().Kind() != reflect.Struct {
+		return errors.New("default: invalid structure")
 	}
-	return errors.New("env: invalid structure")
+	return f.fillStruct(v.Elem())
 }
 
-// fillStruct permet de définir les champs de la structure avec la valeur par défaut
+// fillStruct sets the tagged fields of s to their default value, walking through
+// nested structs and non-nil pointers to structs.
 func (f Default) fillStruct(s reflect.Value) error {
 	for i := 0; i < s.NumField(); i++ {
 		if t, exist := s.Type().Field(i).Tag.Lookup("default"); exist {

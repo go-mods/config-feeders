@@ -1,6 +1,9 @@
+// Package yaml_feeder provides a golobby/config feeder that fills a structure
+// with the content of a YAML file.
 package yaml_feeder
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,18 +25,22 @@ var YAMLUnmarshal func(data []byte, v interface{}) error
 
 // Feed feeds the structure with the YAML file data.
 func (f Yaml) Feed(structure interface{}) error {
+	if f.Path == "" {
+		return errors.New("yaml: empty path")
+	}
+
 	buf, err := os.ReadFile(filepath.Clean(f.Path))
-
 	if err != nil {
-		return fmt.Errorf("yaml: %w", err)
+		return err
 	}
 
-	if YAMLUnmarshal == nil {
-		YAMLUnmarshal = yaml.Unmarshal
+	unmarshal := YAMLUnmarshal
+	if unmarshal == nil {
+		unmarshal = yaml.Unmarshal
 	}
 
-	if err = YAMLUnmarshal(buf, structure); err != nil {
-		return fmt.Errorf("yaml: %w", err)
+	if err = unmarshal(buf, structure); err != nil {
+		return fmt.Errorf("%s: %w", f.Path, err)
 	}
 
 	return nil

@@ -1,8 +1,8 @@
+// Package env_feeder provides a golobby/config feeder that fills a structure
+// with the environment variables named by its `env` tags.
 package env_feeder
 
 import (
-	"fmt"
-
 	"github.com/golobby/env/v2"
 )
 
@@ -13,9 +13,5 @@ type Env struct{}
 
 // Feed feeds the structure with the environment variables.
 func (f Env) Feed(structure interface{}) error {
-	if err := env.Feed(structure); err != nil {
-		return fmt.Errorf("env: %w", err)
-	}
-
-	return nil
+	return env.Feed(structure)
 }

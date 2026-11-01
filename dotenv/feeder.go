@@ -1,6 +1,9 @@
+// Package dotenv_feeder provides a golobby/config feeder that fills a structure
+// with the content of a dot env (.env) file, using its `env` tags.
 package dotenv_feeder
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,14 +20,18 @@ type DotEnv struct {
 
 // Feed feeds the structure with the dot env file data.
 func (f DotEnv) Feed(structure interface{}) error {
+	if f.Path == "" {
+		return errors.New("dotenv: empty path")
+	}
+
 	file, err := os.Open(filepath.Clean(f.Path))
 	if err != nil {
-		return fmt.Errorf("config: cannot open env file; err: %w", err)
+		return err
 	}
 	defer func(file *os.File) { _ = file.Close() }(file)
 
 	if err = dotenv.NewDecoder(file).Decode(structure); err != nil {
-		return fmt.Errorf("dotenv: %w", err)
+		return fmt.Errorf("%s: %w", f.Path, err)
 	}
 
 	return nil

@@ -1,6 +1,9 @@
+// Package toml_feeder provides a golobby/config feeder that fills a structure
+// with the content of a TOML file.
 package toml_feeder
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,18 +25,22 @@ var TOMLUnmarshal func(data []byte, v interface{}) error
 
 // Feed feeds the structure with the TOML file data.
 func (f Toml) Feed(structure interface{}) error {
+	if f.Path == "" {
+		return errors.New("toml: empty path")
+	}
+
 	buf, err := os.ReadFile(filepath.Clean(f.Path))
-
 	if err != nil {
-		return fmt.Errorf("toml: %w", err)
+		return err
 	}
 
-	if TOMLUnmarshal == nil {
-		TOMLUnmarshal = toml.Unmarshal
+	unmarshal := TOMLUnmarshal
+	if unmarshal == nil {
+		unmarshal = toml.Unmarshal
 	}
 
-	if err = TOMLUnmarshal(buf, structure); err != nil {
-		return fmt.Errorf("toml: %w", err)
+	if err = unmarshal(buf, structure); err != nil {
+		return fmt.Errorf("%s: %w", f.Path, err)
 	}
 
 	return nil
